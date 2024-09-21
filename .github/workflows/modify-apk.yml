@@ -21,13 +21,12 @@ jobs:
           mkdir -p $HOME/android-sdk/cmdline-tools/latest
           unzip tools.zip -d $HOME/android-sdk/cmdline-tools/latest
           rm tools.zip
-          echo "export ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "PATH=\$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:\$PATH" >> $GITHUB_ENV
 
       - name: SDK 및 플랫폼 설치
         run: |
-          echo "source $GITHUB_ENV" >> $BASH_ENV
-          source $BASH_ENV
+          source $GITHUB_ENV
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-30" "build-tools;30.0.3"
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "extras;google;m2repository" "extras;android;m2repository"
 
