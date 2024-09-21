@@ -1,62 +1,54 @@
 name: WebView Update
+
 on:
   release:
     types: [published]
-  workflow_dispatch: 
-  repository_dispatch: 
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 도구 설치
+      - name: Install Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y openjdk-11-jdk wget unzip
+          sudo apt-get update && sudo apt-get install -y openjdk-11-jdk wget unzip
 
-      - name: Android SDK 설치
-        run: |
-          wget https://dl.google.com/android/repository/commandlinetools-linux-6609375_latest.zip -O tools.zip
-          mkdir -p $HOME/android-sdk/cmdline-tools/latest
-          unzip tools.zip -d $HOME/android-sdk/cmdline-tools/latest
-          rm tools.zip
-          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "PATH=\$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:\$PATH" >> $GITHUB_ENV
+      - name: Install Android SDK
+        uses: google/android-actions@v2
+        with:
+          google-services-file: ${{ secrets.GOOGLE_SERVICES_FILE }}  # Optional: If your app uses Google services
+          sdkComponents: platform-tools, platforms;android-30, build-tools;30.0.3
 
-      - name: SDK 및 플랫폼 설치
+      - name: Download SystemWebView APK
         run: |
-          source $GITHUB_ENV
-          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-30" "build-tools;30.0.3"
-          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "extras;google;m2repository" "extras;android;m2repository"
-
-      - name: 해독
-        run: |
-          source $GITHUB_ENV
           wget https://github.com/uazo/cromite/releases/download/latest/arm64_SystemWebView64.apk -O input.apk
+
+      - name: Decompile APK
+        run: |
           apktool d input.apk -o decompiled
 
-      - name: 매니페스트 수정
+      - name: Modify Manifest
         run: |
           sed -i 's/package="com.android.webview"/package="com.google.android.webview"/' decompiled/AndroidManifest.xml
           sed -i 's/android:exported="false"/android:exported="true"/g' decompiled/AndroidManifest.xml
           sed -i 's/android:exported=""/android:exported="true"/g' decompiled/AndroidManifest.xml
 
-      - name: 재구성
+      - name: Recompile APK
         run: |
           apktool b decompiled -o output.apk
 
-      - name: 키설정
+      - name: Generate Keystore (if not already present)
         run: |
           if [ ! -f key.jks ]; then
             keytool -genkey -v -keystore key.jks -alias keyalias -keyalg RSA -keysize 2048 -validity 10000 -storepass mypassword -keypass mypassword -dname "CN=User, OU=Unit, O=Org, L=City, ST=State, C=Country"
           fi
 
-      - name: 서명
+      - name: Sign APK
         run: |
           apksigner sign --ks key.jks --out signed.apk output.apk
 
-      - name: 업로드
+      - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: apk
