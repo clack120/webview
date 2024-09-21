@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: 다운
         run: |
-          wget https://github.com/uazo/cromite/releases/download/${{ github.event.release.tag_name }}/arm64_SystemWebView64.apk -O apk/input.apk
+          wget https://github.com/uazo/cromite/releases/download/${{ github.event.release.tag_name }}/arm64_SystemWebView64.apk -O input.apk
 
       - name: 도구 설치
         run: |
@@ -21,18 +21,16 @@ jobs:
           sudo apt-get install -y apktool openjdk-11-jdk
 
       - name: 해독
-        run: |
-          apktool d apk/input.apk -o apk/decompiled
+        run: apktool d input.apk -o decompiled
 
       - name: 매니페스트 수정
         run: |
-          sed -i 's/package="com.android.webview"/package="com.google.android.webview"/' apk/decompiled/AndroidManifest.xml
-          sed -i 's/android:exported="false"/android:exported="true"/g' apk/decompiled/AndroidManifest.xml
-          sed -i 's/android:exported=""/android:exported="true"/g' apk/decompiled/AndroidManifest.xml
+          sed -i 's/package="com.android.webview"/package="com.google.android.webview"/' decompiled/AndroidManifest.xml
+          sed -i 's/android:exported="false"/android:exported="true"/g' decompiled/AndroidManifest.xml
+          sed -i 's/android:exported=""/android:exported="true"/g' decompiled/AndroidManifest.xml
 
       - name: 재구성
-        run: |
-          apktool b apk/decompiled -o apk/output.apk
+        run: apktool b decompiled -o output.apk
 
       - name: 키설정
         run: |
@@ -41,11 +39,10 @@ jobs:
           fi
 
       - name: 서명
-        run: |
-          apksigner sign --ks key.jks --out apk/signed.apk apk/output.apk
+        run: apksigner sign --ks key.jks --out signed.apk output.apk
 
       - name: 업로드
         uses: actions/upload-artifact@v3
         with:
           name: apk
-          path: apk/signed.apk
+          path: signed.apk
