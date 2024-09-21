@@ -18,7 +18,7 @@ jobs:
       - name: Android SDK 설치
         run: |
           wget https://dl.google.com/android/repository/commandlinetools-linux-6609375_latest.zip -O tools.zip
-          mkdir -p $HOME/android-sdk/cmdline-tools
+          mkdir -p $HOME/android-sdk/cmdline-tools/latest
           unzip tools.zip -d $HOME/android-sdk/cmdline-tools/latest
           rm tools.zip
           echo "export ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
@@ -26,15 +26,14 @@ jobs:
 
       - name: SDK 및 플랫폼 설치
         run: |
-          source $GITHUB_ENV
+          echo "source $GITHUB_ENV" >> $BASH_ENV
+          source $BASH_ENV
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-30" "build-tools;30.0.3"
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "extras;google;m2repository" "extras;android;m2repository"
 
       - name: 해독
         run: |
           source $GITHUB_ENV
-          sdkmanager --install "platforms;android-30" # Ensure platform is installed before using apktool
-          apktool if $ANDROID_SDK_ROOT/platforms/android-30/android.jar
           wget https://github.com/uazo/cromite/releases/download/latest/arm64_SystemWebView64.apk -O input.apk
           apktool d input.apk -o decompiled
 
