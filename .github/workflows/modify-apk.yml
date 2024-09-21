@@ -1,4 +1,5 @@
 name: WebView Update
+
 on:
   release:
     types: [published]
@@ -44,7 +45,7 @@ jobs:
           apksigner sign --ks key.jks --out apk/signed.apk apk/output.apk
 
       - name: 업로드
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: apk
           path: apk/signed.apk
