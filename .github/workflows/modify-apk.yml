@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: 다운
         run: |
-          wget https://github.com/uazo/cromite/releases/download/${{ github.event.release.tag_name }}/arm64_SystemWebView64.apk -O input.apk
+          wget https://github.com/uazo/cromite/releases/latest/download/arm64_SystemWebView64.apk -O input.apk
 
       - name: 도구 설치
         run: |
@@ -31,12 +31,6 @@ jobs:
 
       - name: 재구성
         run: apktool b decompiled -o output.apk
-
-      - name: 키설정
-        run: |
-          if [ ! -f key.jks ]; then
-            keytool -genkey -v -keystore key.jks -alias keyalias -keyalg RSA -keysize 2048 -validity 10000 -storepass ${{ secrets.KEYSTORE_PASSWORD }} -keypass ${{ secrets.KEYSTORE_PASSWORD }} -dname "CN=User, OU=Unit, O=Org, L=City, ST=State, C=Country"
-          fi
 
       - name: 서명
         run: apksigner sign --ks key.jks --out signed.apk output.apk
