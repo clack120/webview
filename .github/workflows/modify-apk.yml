@@ -1,0 +1,50 @@
+name: WebView Update
+on:
+  release:
+    types: [published]
+  workflow_dispatch: 
+  repository_dispatch: 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 다운
+        run: |
+          wget https://github.com/uazo/cromite/releases/download/${{ github.event.release.tag_name }}/arm64_SystemWebView64.apk -O apk/input.apk
+
+      - name: 도구 설치
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apktool openjdk-11-jdk
+
+      - name: 해독
+        run: |
+          apktool d apk/input.apk -o apk/decompiled
+
+      - name: 매니페스트 수정
+        run: |
+          sed -i 's/package="com.android.webview"/package="com.google.android.webview"/' apk/decompiled/AndroidManifest.xml
+          sed -i 's/android:exported="false"/android:exported="true"/g' apk/decompiled/AndroidManifest.xml
+          sed -i 's/android:exported=""/android:exported="true"/g' apk/decompiled/AndroidManifest.xml
+
+      - name: 재구성
+        run: |
+          apktool b apk/decompiled -o apk/output.apk
+
+      - name: 키설정
+        run: |
+          if [ ! -f key.jks ]; then
+            keytool -genkey -v -keystore key.jks -alias keyalias -keyalg RSA -keysize 2048 -validity 10000 -storepass ${{ secrets.KEYSTORE_PASSWORD }} -keypass ${{ secrets.KEYSTORE_PASSWORD }} -dname "CN=User, OU=Unit, O=Org, L=City, ST=State, C=Country"
+          fi
+
+      - name: 서명
+        run: |
+          apksigner sign --ks key.jks --out apk/signed.apk apk/output.apk
+
+      - name: 업로드
+        uses: actions/upload-artifact@v2
+        with:
+          name: apk
+          path: apk/signed.apk
