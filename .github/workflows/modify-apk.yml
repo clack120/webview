@@ -20,6 +20,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y apktool openjdk-11-jdk
 
+      - name: 프레임워크 리소스 설치
+        run: |
+          apktool if /usr/share/apktool/framework/1.apk
+
       - name: 해독
         run: apktool d input.apk -o decompiled
 
